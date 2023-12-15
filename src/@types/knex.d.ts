@@ -14,9 +14,10 @@ declare module 'knex/types/tables' {
       meal: string
       description: string
       date: string
-      hourInMinutes: number
-      diet: boolean
-      created_at: string
+      hoursInMinutes: number
+      diet: 'S' | 'N'
+      user_id: string
+      created_at: Date
     }
   }
 }
