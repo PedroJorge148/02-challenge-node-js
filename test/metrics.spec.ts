@@ -18,30 +18,26 @@ describe('Meals routes', () => {
     execSync('npm run knex migrate:latest')
   })
 
-  it('should be able to register a meal', async () => {
+  it('should be able to get total count of meals', async () => {
     const { cookies } = await createAndIdentifyUser(app)
 
     await request(app.server)
       .post('/meals')
       .set('Cookie', cookies)
       .send({
-        meal: 'Hambúrguer',
+        meal: 'Salada',
         description: 'MR Burguer',
         date: new Date(),
         hour: '16:40',
-        diet: 'N',
+        diet: 'S',
       })
       .expect(201)
-  })
-
-  it('should be able to list all meals of a user', async () => {
-    const { cookies } = await createAndIdentifyUser(app)
 
     await request(app.server)
       .post('/meals')
       .set('Cookie', cookies)
       .send({
-        meal: 'Hambúrguer',
+        meal: 'Lasanha',
         description: 'MR Burguer',
         date: new Date(),
         hour: '16:40',
@@ -49,125 +45,40 @@ describe('Meals routes', () => {
       })
       .expect(201)
 
-    const listMealsResponse = await request(app.server)
-      .get('/meals')
+    const totalMeals = await request(app.server)
+      .get('/metrics/meals')
       .set('Cookie', cookies)
       .send()
 
-    expect(listMealsResponse.body.meals).toEqual([
+    console.log(totalMeals.body)
+
+    expect(totalMeals.body).toEqual([
       expect.objectContaining({
-        meal: 'Hambúrguer',
-        description: 'MR Burguer',
-        diet: 'N',
+        total: 2,
       }),
     ])
   })
 
-  it('should be able to get a meal by id', async () => {
+  it('should be able to get total count of meals on diet', async () => {
     const { cookies } = await createAndIdentifyUser(app)
 
     await request(app.server)
       .post('/meals')
       .set('Cookie', cookies)
       .send({
-        meal: 'Hambúrguer',
-        description: 'MR Burguer',
-        date: new Date(),
-        hour: '16:40',
-        diet: 'N',
-      })
-      .expect(201)
-
-    await request(app.server)
-      .post('/meals')
-      .set('Cookie', cookies)
-      .send({
-        meal: 'Lasanha',
-        description: 'MR Burguer',
-        date: new Date(),
-        hour: '16:40',
-        diet: 'N',
-      })
-      .expect(201)
-
-    const listMealsResponse = await request(app.server)
-      .get('/meals')
-      .set('Cookie', cookies)
-      .send()
-
-    const mealId = listMealsResponse.body.meals[0].id
-
-    const getMealById = await request(app.server)
-      .get(`/meals/${mealId}`)
-      .set('Cookie', cookies)
-      .send()
-
-    expect(getMealById.body.meal).toEqual(
-      expect.objectContaining({
-        id: mealId,
-        meal: 'Hambúrguer',
-        description: 'MR Burguer',
-      }),
-    )
-  })
-
-  it('should be able to update a meal by id', async () => {
-    const { cookies } = await createAndIdentifyUser(app)
-
-    await request(app.server)
-      .post('/meals')
-      .set('Cookie', cookies)
-      .send({
-        meal: 'Hambúrguer',
-        description: 'MR Burguer',
-        date: new Date(),
-        hour: '16:40',
-        diet: 'N',
-      })
-      .expect(201)
-
-    const listMealsResponse = await request(app.server)
-      .get('/meals')
-      .set('Cookie', cookies)
-      .send()
-
-    const mealId = listMealsResponse.body.meals[0].id
-
-    await request(app.server)
-      .put(`/meals/${mealId}`)
-      .set('Cookie', cookies)
-      .send({
-        meal: 'Lasanha',
+        meal: 'Salada',
         description: 'MR Burguer',
         date: new Date(),
         hour: '16:40',
         diet: 'S',
       })
-      .expect(200)
-
-    const getMealById = await request(app.server)
-      .get(`/meals/${mealId}`)
-      .set('Cookie', cookies)
-      .send()
-
-    expect(getMealById.body.meal).toEqual(
-      expect.objectContaining({
-        id: mealId,
-        meal: 'Lasanha',
-        description: 'MR Burguer',
-        diet: 'S',
-      }),
-    )
-  })
-
-  it('should be able to delete a meal by id', async () => {
-    const { cookies } = await createAndIdentifyUser(app)
+      .expect(201)
 
     await request(app.server)
       .post('/meals')
       .set('Cookie', cookies)
       .send({
-        meal: 'Hambúrguer',
+        meal: 'Lasanha',
         description: 'MR Burguer',
         date: new Date(),
         hour: '16:40',
@@ -175,26 +86,85 @@ describe('Meals routes', () => {
       })
       .expect(201)
 
-    let listMealsResponse = await request(app.server)
-      .get('/meals')
+    const totalMeals = await request(app.server)
+      .get('/metrics/on-diet')
       .set('Cookie', cookies)
       .send()
 
-    const mealId = listMealsResponse.body.meals[0].id
+    console.log(totalMeals.body)
+
+    expect(totalMeals.body).toEqual([
+      expect.objectContaining({
+        totalOnDiet: 1,
+      }),
+    ])
+  })
+
+  it('should be able to get total count of meals off diet', async () => {
+    const { cookies } = await createAndIdentifyUser(app)
 
     await request(app.server)
-      .delete(`/meals/${mealId}`)
+      .post('/meals')
+      .set('Cookie', cookies)
+      .send({
+        meal: 'Salada',
+        description: 'MR Burguer',
+        date: new Date(),
+        hour: '16:40',
+        diet: 'S',
+      })
+      .expect(201)
+
+    await request(app.server)
+      .post('/meals')
+      .set('Cookie', cookies)
+      .send({
+        meal: 'Lasanha',
+        description: 'MR Burguer',
+        date: new Date(),
+        hour: '16:40',
+        diet: 'N',
+      })
+      .expect(201)
+
+    const totalMeals = await request(app.server)
+      .get('/metrics/non-diet')
       .set('Cookie', cookies)
       .send()
-      .expect(200)
 
-    listMealsResponse = await request(app.server)
-      .get('/meals')
+    console.log(totalMeals.body)
+
+    expect(totalMeals.body).toEqual([
+      expect.objectContaining({
+        totalNonDiet: 1,
+      }),
+    ])
+  })
+
+  it.only('should be able to get best sequence off meals on diet', async () => {
+    const { cookies } = await createAndIdentifyUser(app)
+
+    const dietSequence = ['S', 'S', 'N']
+
+    for (let i = 0; i < 3; i++) {
+      await request(app.server).post('/meals').set('Cookie', cookies).send({
+        meal: 'Salada',
+        description: 'MR Burguer',
+        date: new Date(),
+        hour: '16:40',
+        diet: dietSequence[i],
+      })
+    }
+
+    const totalMeals = await request(app.server)
+      .get('/metrics/best-sequence')
       .set('Cookie', cookies)
       .send()
 
-    console.log(listMealsResponse.body.meals)
-
-    expect(listMealsResponse.body.meals).toEqual([])
+    expect(totalMeals.body).toEqual([
+      expect.objectContaining({
+        best_sequence: 2,
+      }),
+    ])
   })
 })
